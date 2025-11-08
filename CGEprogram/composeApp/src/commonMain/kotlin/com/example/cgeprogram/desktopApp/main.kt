@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width // <-- IMPORTACIÓN AÑADIDA
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,7 +27,17 @@ import com.example.cge_electricidad_program.shared.persistencia.PersistenciaDato
 import com.example.cge_electricidad_program.shared.servicios.BoletaService
 import com.example.cge_electricidad_program.shared.servicios.TarifaService
 import com.example.cge_electricidad_program.shared.servicios.PdfService
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 
+
+// anotacion necesaria para usar Scaffold y TopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App(
     onGuardarArchivo: (String, String) -> Unit = { _, _ -> }
@@ -34,54 +45,65 @@ fun App(
     var isDarkMode by remember { mutableStateOf(false) }
     val colors = if (isDarkMode) darkColorScheme() else lightColorScheme()
 
+    // estado de navegacion
+    val pantallas = listOf("Clientes", "Medidores", "Lecturas", "Boletas")
+    var tabSeleccionada by remember { mutableStateOf(0) } // Guarda el índice de la pestaña
+
     MaterialTheme(colorScheme = colors) {
         Surface(modifier = Modifier.fillMaxSize()) {
 
-            var pantallaActual by remember { mutableStateOf("clientes") }
-
-            // creacion de servicios
-            val persistencia = remember { PersistenciaDatos() }
-            val tarifaService = remember { TarifaService() }
-            val pdfService = remember { PdfService() }
-            val boletaService = remember { BoletaService(persistencia, tarifaService) }
-
-            Column(modifier = Modifier.fillMaxWidth()) {
+            // nos da una estructura de páginas con una barra en la parte superior
+            Scaffold(
                 // menu de navegacion
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // botones para navegar entre ventanas
-                    Button(onClick = { pantallaActual = "clientes" }) { Text("Clientes") }
-                    Button(onClick = { pantallaActual = "medidores" }) { Text("Medidores") }
-                    Button(onClick = { pantallaActual = "lecturas" }) { Text("Lecturas") }
-                    Button(onClick = { pantallaActual = "boletas" }) { Text("Boletas") }
-
-                    Spacer(Modifier.weight(1f)) // Empuja el Switch a la derecha
-
-                    // switch para modo oscuro
-                    Switch(
-                        checked = isDarkMode,
-                        onCheckedChange = { isDarkMode = it },
-                        thumbContent = {
-                            Text(if (isDarkMode) "🌙" else "☀️")
+                topBar = {
+                    TopAppBar(
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                        ),
+                        // el titulo que contendran las pestañas
+                        title = {
+                            TabRow(selectedTabIndex = tabSeleccionada) {
+                                pantallas.forEachIndexed { index, titulo ->
+                                    Tab(
+                                        selected = (tabSeleccionada == index),
+                                        onClick = { tabSeleccionada = index },
+                                        text = { Text(titulo) }
+                                    )
+                                }
+                            }
+                        },
+                        // los elementos a la derecha de la barra
+                        actions = {
+                            // switch para modo oscuro
+                            Switch(
+                                checked = isDarkMode,
+                                onCheckedChange = { isDarkMode = it },
+                            )
+                            Spacer(Modifier.width(8.dp))
                         }
                     )
                 }
+            ) { paddingInterno ->
 
-                // contenido de la Pantalla
-                when (pantallaActual) {
-                    "clientes" -> PantallaClientes(persistencia)
-                    "medidores" -> PantallaMedidores(persistencia)
-                    "lecturas" -> PantallaLecturas(persistencia)
-                    "boletas" -> PantallaBoletas(
-                        boletaService,
-                        pdfService,
-                        onGuardarArchivo
-                    )
+                Box(modifier = Modifier.fillMaxSize().padding(paddingInterno)) {
+
+                    // creacion de servicios
+                    val persistencia = remember { PersistenciaDatos() }
+                    val tarifaService = remember { TarifaService() }
+                    val pdfService = remember { PdfService() }
+                    val boletaService = remember { BoletaService(persistencia, tarifaService) }
+
+                    // contenido de la Pantalla
+                    when (pantallas[tabSeleccionada]) {
+                        "Clientes" -> PantallaClientes(persistencia)
+                        "Medidores" -> PantallaMedidores(persistencia)
+                        "Lecturas" -> PantallaLecturas(persistencia)
+                        "Boletas" -> PantallaBoletas(
+                            boletaService,
+                            pdfService,
+                            onGuardarArchivo
+                        )
+                    }
                 }
             }
         }

@@ -43,7 +43,7 @@ fun PantallaClientes(persistencia: PersistenciaDatos) { // Parámetros agregados
 
         // etiquetas para reconocer a que campo corresponde cada uno
         CampoTextField("RUT (XXXXXXXX-X)", rut) { rut = it }
-        CampoTextField("Nombre Completo", nombre) { nombre = it }
+        CampoTextField("Nombre", nombre) { nombre = it }
         CampoTextField("Email", email) { email = it }
         CampoTextField("Dirección de facturacion", direccion) { direccion = it }
 
